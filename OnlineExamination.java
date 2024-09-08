@@ -72,7 +72,7 @@ class Exam
 
 class AuthController 
 {
-    HashMap<String, User> users=new HashMap<>();
+    private HashMap<String, User> users=new HashMap<>();
     public void register(String username, String password, String profile) {
         users.put(username, new User(username, password, profile));
     }
