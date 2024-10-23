@@ -170,7 +170,7 @@ class ExamController
     }
 }
 
-public class OnlineExamination 
+public class OnlineTest 
 {
     public static void main(String[] args) 
     {
