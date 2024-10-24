@@ -76,6 +76,9 @@ class ProfileController {
     public void changePassword(User user, String newPassword) {
         user.setPassword(newPassword);
     }
+    public void changeProfile(User user, String newUsername) {
+        user.setUsername(newUsername);
+    }
 }
 
 class TestController {
