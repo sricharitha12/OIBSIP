@@ -15,6 +15,9 @@ class User {
     public void setPassword(String password) {
         this.password = password;
     }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }
 
 class Question {
@@ -210,7 +213,7 @@ public class OnlineTestSystem {
                         System.out.print("Do you want to update your profile? (y/n): ");
                         String updateProfileChoice = sc.nextLine();
                         if (updateProfileChoice.equalsIgnoreCase("y")) {
-                            System.out.print("Enter new password: ");
+                            System.out.print("Enter new profile name: ");
                             String newProfilePassword = sc.nextLine();
                             profileController.changePassword(user, newProfilePassword);
                             System.out.println("Profile updated successfully!");
