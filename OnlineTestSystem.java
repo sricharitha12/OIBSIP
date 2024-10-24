@@ -1,261 +1,246 @@
 import java.util.*;
-class User 
-{
+class User {
     String username;
     String password;
-    String profile;
-    public User(String username, String password, String profile) 
-    {
-        this.username= username;
-        this.password= password;
-        this.profile= profile;
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
     public String getUsername() {
-        return username; 
+        return username;
     }
-    public void setUsername(String username) {
-        this.username = username; 
+    public String getPassword() {
+        return password;
     }
-    public String getPassword() { 
-        return password; 
-    }
-    public void setPassword(String password) { 
-        this.password = password; 
-    }
-    public String getProfile() { 
-        return profile; 
-    }
-    public void setProfile(String profile) { 
-        this.profile = profile; 
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
 
-class Question 
-{
+class Question {
     String questionText;
     String[] options;
     int correctAnswerIndex;
-
-    public Question(String questionText, String[] options, int correctAnswerIndex) 
-    {
-        this.questionText= questionText;
-        this.options= options;
-        this.correctAnswerIndex= correctAnswerIndex;
+    public Question(String questionText, String[] options, int correctAnswerIndex) {
+        this.questionText = questionText;
+        this.options = options;
+        this.correctAnswerIndex = correctAnswerIndex;
     }
-    public String getQuestionText() { 
-        return questionText; 
+    public String getQuestionText() {
+        return questionText;
     }
     public String[] getOptions() {
-        return options; 
+        return options;
     }
     public int getCorrectAnswerIndex() {
         return correctAnswerIndex;
     }
 }
 
-class Exam 
-{
+class Test {
     List<Question> questions;
-    int duration; 
-    public Exam(List<Question> questions, int duration) 
-    {
-        this.questions= questions;
-        this.duration= duration;
+    int duration; // in minutes
+    public Test(List<Question> questions, int duration) {
+        this.questions = questions;
+        this.duration = duration;
     }
-    public List<Question> getQuestions() { 
-        return questions; 
+    public List<Question> getQuestions() {
+        return questions;
     }
-    public int getDuration() { 
-        return duration; 
+    public int getDuration() {
+        return duration;
     }
 }
 
-class AuthController 
-{
-    private HashMap<String, User> users=new HashMap<>();
-    public void register(String username, String password, String profile) {
-        users.put(username, new User(username, password, profile));
+class AuthController {
+    private HashMap<String, User> users = new HashMap<>();
+    public void register(String username, String password) {
+        if (!users.containsKey(username)) {
+            users.put(username, new User(username, password));
+            System.out.println("Registration successful for user: " + username);
+        } else {
+            System.out.println("Username already exists. Please choose a different one.");
+        }
     }
 
-    public User login(String username, String password) 
-    {
-        User user=users.get(username);
-        if(user!=null && user.getPassword().equals(password)) 
+    public User login(String username, String password) {
+        User user = users.get(username);
+        if (user != null && user.getPassword().equals(password)) {
             return user;
+        }
         return null;
     }
 }
 
-class ProfileController 
-{
-    public void updateProfile(User user, String newProfile) {
-        user.setProfile(newProfile);
-    }
+class ProfileController {
     public void changePassword(User user, String newPassword) {
         user.setPassword(newPassword);
     }
 }
 
-class ExamController 
-{
-    Exam exam;
+class TestController {
+    Test test;
     int[] userAnswers;
     boolean timeUp = false;
-    public ExamController(Exam exam) 
-    {
-        this.exam = exam;
-        this.userAnswers=new int[exam.getQuestions().size()];
+
+    public TestController(Test test) {
+        this.test = test;
+        this.userAnswers = new int[test.getQuestions().size()];
     }
-    public void startExam() 
-    {
-        Timer timer=new Timer();
-        long durationMillis=exam.getDuration() * 60 * 1000;
-        long startTime=System.currentTimeMillis();
-        timer.scheduleAtFixedRate(new TimerTask() 
-        {
-            @Override
-            public void run() 
-            {
-                long elapse=System.currentTimeMillis()-startTime;
-                long remaining=durationMillis-elapse;
-                if(remaining<=0) 
-                {
-                    timeUp = true;
-                    System.out.println("\nTime is up! Exam auto-submitted.");
-                    submitExam();
-                    timer.cancel();
-                } 
-                else {
-                    long remainingSeconds=remaining / 1000;
-                    long minutes=remainingSeconds / 60;
-                    long seconds=remainingSeconds % 60;
-                    System.out.printf("\rTime remaining: %02d:%02d", minutes, seconds);
-                }
+
+    public void startTest() {
+        // Timer setup
+        long durationMillis = test.getDuration() * 60 * 1000;
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + durationMillis;
+
+        // Start countdown timer thread
+        Thread timerThread = new Thread(() -> {
+            try {
+                Thread.sleep(durationMillis);
+                timeUp = true;
+                System.out.println("\nTime is up! Test auto-submitted.");
+                submitTest(); // Call submitTest here to display the score when time is up
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        }, 0, 1000);
-    
-        Scanner sc=new Scanner(System.in);
-        List<Question> questions=exam.getQuestions();
-        for(int i=0;i<questions.size() && !timeUp;i++) 
-        {
-            Question q=questions.get(i);
+        });
+        timerThread.start();
+
+        Scanner sc = new Scanner(System.in);
+        List<Question> questions = test.getQuestions();
+        System.out.println("\nYou have " + test.getDuration() + " minutes for this test with " + questions.size() + " questions.");
+        for (int i = 0; i < questions.size() && !timeUp; i++) {
+            Question q = questions.get(i);
             System.out.println("\n" + (i + 1) + ". " + q.getQuestionText());
             String[] options = q.getOptions();
-            for(int j=0;j<options.length;j++) 
+            for (int j = 0; j < options.length; j++) {
                 System.out.println(options[j]);
-            System.out.print("Your answer: ");
-            char answer=sc.nextLine().toUpperCase().charAt(0);
-            System.out.println("Your answer: " + answer); 
-            userAnswers[i]=answer-'A';
-            System.out.print("Time remaining: ");
-            System.out.printf("%02d:%02d", (durationMillis - (System.currentTimeMillis() - startTime)) / (60 * 1000), ((durationMillis-(System.currentTimeMillis() - startTime)) / 1000) % 60);
-            System.out.println();
+            }
+            System.out.print("Your answer (A/B/C/D): ");
+            char answer = sc.nextLine().toUpperCase().charAt(0);
+            userAnswers[i] = answer - 'A'; 
         }
         if (!timeUp) {
-            submitExam();
-            timer.cancel();
+            System.out.println("\nYou have finished answering all questions.");
+            System.out.print("Do you want to submit the test now? (y/n): ");
+            String submitChoice = sc.nextLine();
+            if (submitChoice.equalsIgnoreCase("y")) {
+                submitTest();
+                return; 
+            } else {
+                System.out.println("Continuing until time is up...");
+            }
         }
+
+        // Wait for the timer thread to complete if time is not up
+        if (!timeUp) {
+            try {
+                timerThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        // If the time is up and the test is auto-submitted, handled score calculation in the timer thread.
     }
-    
-    void submitExam() 
-    {
-        int score=0;
-        List<Question> questions=exam.getQuestions();
-        for(int i=0;i<questions.size();i++) 
-        {
-            if(userAnswers[i]==questions.get(i).getCorrectAnswerIndex()) 
+
+    public void submitTest() {
+        int score = 0;
+        List<Question> questions = test.getQuestions();
+        for (int i = 0; i < questions.size(); i++) {
+            if (userAnswers[i] == questions.get(i).getCorrectAnswerIndex()) {
                 score++;
+            }
         }
         System.out.println("\nYour score: " + score + "/" + questions.size());
     }
 }
 
-public class OnlineTest 
-{
-    public static void main(String[] args) 
-    {
-        AuthController authController=new AuthController();
-        ProfileController profileController=new ProfileController();
-        authController.register("student", "password", "Student Profile");
+public class OnlineTestSystem {
+    public static void main(String[] args) {
+        AuthController authController = new AuthController();
+        ProfileController profileController = new ProfileController();
+        Scanner sc = new Scanner(System.in);
+        Map<String, User> loggedInUsers = new HashMap<>();
 
-        Scanner sc=new Scanner(System.in);
-        System.out.print("Username: ");
-        String username=sc.nextLine();
-        System.out.print("Password: ");
-        String password=sc.nextLine();
-        User user=authController.login(username, password);
-        if (user!=null) 
-        {
-            System.out.println("Login successful!");
-            System.out.print("Update username/profile: ");
-            String newProfile=sc.nextLine(); 
-            profileController.updateProfile(user, newProfile);
-            System.out.println("Profile updated!");
-            System.out.print("Change password: ");
-            String newPassword=sc.nextLine(); 
-            profileController.changePassword(user, newPassword);
-            System.out.println("Password changed!");
+        while (true) {
+            System.out.println("\n1. Register");
+            System.out.println("2. Login");
+            System.out.println("Select an option (or type 'exit' to quit): ");
+            String option = sc.nextLine();
 
-Question q1 = new Question("What does HTML stand for?",
-new String[]{"A) Hyper Text Markup Language",
-             "B) Hyperlinks and Text Markup Language",
-             "C) Home Tool Markup Language",
-             "D) Hyper Text Multiple Language"}, 0);
-Question q2 = new Question("Which programming language is commonly used for web development?",
-new String[]{"A) Java",
-             "B) Python",
-             "C) C++",
-             "D) JavaScript"}, 3);
-Question q3 = new Question("What is the output of 2 + 2 * 3?",
-new String[]{"A) 6",
-             "B) 8",
-             "C) 10",
-             "D) 12"}, 1);
-Question q4 = new Question("Which data structure uses LIFO (Last In, First Out) ordering?",
-new String[]{"A) Queue",
-             "B) Stack",
-             "C) Linked List",
-             "D) Tree"}, 1);
-Question q5 = new Question("Which of the following is not a programming paradigm?",
-new String[]{"A) Object-Oriented Programming (OOP)",
-             "B) Procedural Programming",
-             "C) Functional Programming",
-             "D) Structured Programming"}, 3);
-Question q6 = new Question("What does SQL stand for?",
-new String[]{"A) Simple Query Language",
-             "B) Standard Query Language",
-             "C) Structured Query Language",
-             "D) Scripted Query Language"}, 2);
-Question q7 = new Question("Which sorting algorithm has the worst-case time complexity of O(n^2)?",
-new String[]{"A) Merge Sort",
-             "B) Quick Sort",
-             "C) Bubble Sort",
-             "D) Insertion Sort"}, 2);
-Question q8 = new Question("What is the function of a compiler?",
-new String[]{"A) Converts high-level code to machine code",
-             "B) Executes code line by line",
-             "C) Interprets code directly without compilation",
-             "D) Optimizes code for better performance"}, 0);
-Question q9 = new Question("In object-oriented programming, what is encapsulation?",
-new String[]{"A) Combining data and functions into a single unit",
-             "B) Hiding the implementation details of an object",
-             "C) Inheriting properties and behaviors from a superclass",
-             "D) Allowing multiple objects to share the same code"}, 1);
-Question q10 = new Question("Which of the following is not a type of loop in programming?",
-new String[]{"A) for loop",
-             "B) while loop",
-             "C) do-while loop",
-             "D) if-else loop"}, 3);
+            if (option.equalsIgnoreCase("exit")) {
+                break; 
+            }
+            switch (option) {
+                case "1": // Register new user
+                    System.out.print("Enter new username: ");
+                    String newUsername = sc.nextLine();
+                    System.out.print("Enter new password: ");
+                    String newPassword = sc.nextLine();
+                    authController.register(newUsername, newPassword);
+                    break;
 
-List<Question> questions = Arrays.asList(q1, q2, q3, q4, q5, q6, q7, q8, q9, q10);
-Exam exam = new Exam(questions, 10); 
+                case "2": // Login existing user
+                    System.out.print("Username: ");
+                    String username = sc.nextLine();
+                    System.out.print("Password: ");
+                    String password = sc.nextLine();
 
-            ExamController examController=new ExamController(exam);
-            examController.startExam();
-            System.out.println("You have taken the exam within time");
-        } 
-        else 
-            System.out.println("Login failed!");
+                    User user = authController.login(username, password);
+                    if (user != null) {
+                        System.out.println("Login successful!");
+                        loggedInUsers.put(username, user);
+
+                        // Optional password change
+                        System.out.print("Do you want to change your password? (y/n): ");
+                        String changePasswordChoice = sc.nextLine();
+                        if (changePasswordChoice.equalsIgnoreCase("y")) {
+                            System.out.print("Enter new password: ");
+                            String changedPassword = sc.nextLine();
+                            profileController.changePassword(user, changedPassword);
+                            System.out.println("Password changed!");
+                        }
+
+                        // Optional profile update 
+                        System.out.print("Do you want to update your profile? (y/n): ");
+                        String updateProfileChoice = sc.nextLine();
+                        if (updateProfileChoice.equalsIgnoreCase("y")) {
+                            System.out.print("Enter new password: ");
+                            String newProfilePassword = sc.nextLine();
+                            profileController.changePassword(user, newProfilePassword);
+                            System.out.println("Profile updated successfully!");
+                        }
+
+                        // Starting the test
+                        List<Question> questions = createQuestions();
+                        Test test = new Test(questions, 1); // Set duration in minutes
+                        TestController testController = new TestController(test);
+                        testController.startTest();
+                        loggedInUsers.remove(username);
+                        System.out.println("User logged out successfully.");
+                    } else {
+                        System.out.println("Login failed! Please try again.");
+                    }
+                    break;
+
+                default:
+                    System.out.println("Invalid option. Please choose a valid option.");
+            }
+        }
         sc.close();
+    }
+
+    private static List<Question> createQuestions() {
+        Question q1 = new Question("What does HTML stand for?",
+                new String[]{"A) Hyper Text Markup Language", "B) Hyperlinks and Text Markup Language", "C) Home Tool Markup Language", "D) Hyper Text Multiple Language"}, 0);
+        Question q2 = new Question("Which programming language is commonly used for web development?",
+                new String[]{"A) Java", "B) Python", "C) C++", "D) JavaScript"}, 3);
+        Question q3 = new Question("What is the output of 2 + 2 * 3?",
+                new String[]{"A) 6", "B) 8", "C) 10", "D) 12"}, 1);
+        Question q4 = new Question("Which data structure uses LIFO (Last In, First Out) ordering?",
+                new String[]{"A) Queue", "B) Stack", "C) Linked List", "D) Tree"}, 1);
+        return Arrays.asList(q1, q2, q3, q4);
     }
 }
